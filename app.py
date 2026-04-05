@@ -5,7 +5,7 @@ import requests # <--- Importante para enviar a Discord
 app = Flask(__name__)
 
 # Reemplaza esto con la URL que copiaste de Discord
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1490462183333560331/1Kj8NnWCOF9LHAHdYOiHzK4Nbt-71VeE6SloJbG-oY5U8OJ9s9tiLIl8M9R5b8ZTo4OW"
+DISCORD_WEBHOOK_URL = "TU_URL_DE_WEBHOOK_AQUI"
 
 def enviar_a_discord(mensaje):
     data = {"content": mensaje}
